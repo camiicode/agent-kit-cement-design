@@ -1,6 +1,6 @@
 # 🤖 Agente Virtual Web – Cement Design
 
-Proyecto de desarrollo del **Chatbot Web** basado en **OpenAI AgentKit**, integrado con el ecosistema **Odoo 17** de Cement Design y Enorgánico.
+Proyecto de desarrollo del **Chatbot Web** basado en **OpenAI AgentKit**, integrado con el ecosistema **Odoo 17** de Cement Design.
 
 Este agente virtual será capaz de asistir a usuarios del sitio web (clientes, distribuidores o visitantes) mediante una interfaz conversacional, resolviendo consultas y conectando con módulos internos de Odoo.
 
@@ -8,7 +8,7 @@ Este agente virtual será capaz de asistir a usuarios del sitio web (clientes, d
 
 ## 🧩 Objetivo del proyecto
 
-Desarrollar un **agente virtual web inteligente**, integrado al entorno digital centralizado de Cement Design y Enorgánico, capaz de:
+Desarrollar un **agente virtual web inteligente**, integrado al entorno digital centralizado de Cement Design, capaz de:
 
 - Responder preguntas frecuentes (catálogo, productos, servicios).
 - Escalar solicitudes o casos al CRM de Odoo.
