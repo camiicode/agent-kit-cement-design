@@ -1,8 +1,10 @@
 # Documentación del proyecto
 
-13-11-2025: Se realiza una prueba de conexion desde el ambiente de pruebas de Python hacia Odoo, la prueba consistia en Ingresar a la base de datos de Cement Design, autenticarse con Nombre de usuario y contraseña, ingresar al CRM de Odoo, crear un LEAD con los datos proporcionados de manera estatica y realizar verificacion de dicho LEAD y finalmente devolver status de validacion al entorno de pruabs de Python. Respuesta "SUCCESS"
+13-11-2025: Successful Python to Odoo connection test: The Cement Design database was accessed, authentication was performed in the CRM, and a new lead was created with static data. The verification was successful, returning the "SUCCESS" status to the test environment.
 
-13-11-2025: Se realizo una preuba de llamado fetch desde el ambiente de pruebas de Python, hacia la instancia de Odoo, la prueba consistia en ingresar a la base de datos de CementDesign.shop, autenticarse con NBombre de usuario y contraseña, Ingresar al CRM y mostrar los ultimos 5 LEADS del CRM con prioridad igual o menor a 2. Respuesta "SUCCESS"
+13-11-2025: Successful fetch connection test from Python to Odoo: The CementDesign.shop database was accessed, authentication was performed in the CRM, and the last 5 leads with priority $\le 2$ were retrieved, resulting in success.
+
+13-11-2025: A fetch query was performed on the Odoo database using Python for a specific client. These tests will later be used to validate existing clients. The response was successful.
 
 
 
