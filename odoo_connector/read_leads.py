@@ -17,20 +17,40 @@ print(f"Autentiticado con UID: {ui}")
 
 models = xmlrpc.client.ServerProxy(f"{ODOO_URL}/xmlrpc/2/object")
 
-# 1 Buscar los leads mas recientes (Ultimos 5)
-leads = models.execute_kw(
+# # 1.0 Buscar los leads mas recientes (Ultimos 5)
+# leads = models.execute_kw(
+#   ODOO_DB, ui, ODOO_PASSWORD,
+#   "crm.lead", "search_read",
+
+#   # 1.1 Filtros para obtener todos los leads  
+#   [[]],  # Filtros vacíos para obtener todos los leads
+
+#   # 1.2 Parámetros adicionales
+#   {
+#     "fields": ["id", "name", "email_from", "priority", "user_id"], 
+#     "limit": 5,
+#     "order": "create_date desc"
+#   }
+# )
+
+# # 1.3 Mostrar los resultados en Consola
+# print(f"name: {leads}")
+# for lead in leads:
+#     print(f"- ID: {lead['id']} | {lead['name']} | {lead['email_from']} | Prioridad: {lead['priority']} | Comercial: {lead['user_id'][1] if lead['user_id'] else 'Sin asignar'}")
+
+# 2.0 Busqueda de un contacto en especifico
+partners = models.execute_kw(
   ODOO_DB, ui, ODOO_PASSWORD,
-  "crm.lead", "search_read",
-  [[]],  # Filtros vacíos para obtener todos los leads
-  {
-    "fields": ["id", "name", "email_from", "priority", "user_id"], 
-    "limit": 5,
-    "order": "create_date desc"
-  }
+
+  # 2.1 Si quiero hacer la consulta de un cliente especifico ---
+  "res.partner", "search_read",
+  [
+    [["email", "=", "cliente.prueba@example.com"]]
+  ],
+
+  # 2.2 Campos a retornar de este cliente en especifico
+  {"fields": ["id", "name", "email"]}
 )
 
-#2 Mostrar los resultados en Consola
-print("\n Ultimos 5 Leads en el CRM:\n")
-for lead in leads:
-    print(f"- ID: {lead['id']} | {lead['name']} | {lead['email_from']} | Prioridad: {lead['priority']} | Comercial: {lead['user_id'][1] if lead['user_id'] else 'Sin asignar'}")
-
+# 2.3 Imprimimos el partner en cuestion
+print(partners)
