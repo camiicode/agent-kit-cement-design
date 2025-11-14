@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+  </head>
+  <body>
+    <h1 class="text-2xl font-bold">Chatbot</h1>
+    <h2 class="text-xl font-semibold">Mini chat -- Prueba de conexion frontend - Backend</h2>
+
+    <label for="">Escribe un mensaje</label>
+    <input 
+      type="text" 
+      id="userMessage" 
+      placeholder="Escribe un mensaje..." 
+      class="
+        border 
+        border-gray-300 
+        rounded 
+        p-2 
+        w-64 
+        focus:outline-none 
+        focus:ring-2 
+        focus:ring-blue-500 
+        focus:border-transparent
+      "
+    />
+    <button 
+      onclick="sendMessage()"
+      class="
+        bg-blue-500 
+        text-white 
+        px-4 
+        py-2 
+        rounded 
+        hover:bg-blue-600 
+        focus:outline-none 
+        focus:ring-2 
+        focus:ring-blue-500 
+        focus:ring-opacity-50
+      "
+    >Enviar</button>
+
+    <div id="response">Aqui aparecera la respuesta...</div>
+
+    <script src="app.js"></script>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio"></script>
+  </body>
+</html>

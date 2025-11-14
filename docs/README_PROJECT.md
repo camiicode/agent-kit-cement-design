@@ -6,6 +6,8 @@
 
 13-11-2025: A fetch query was performed on the Odoo database using Python for a specific client. These tests will later be used to validate existing clients. The response was successful.
 
+13-11-2025: A test ticket creation process is performed in the Helpdesk module from the Python test environment using OpenAI's Agent Kit
 
+13-11-2025: A small local test is performed on a widget using Javascript and Python (FastAPI) to verify that the agent understands its functionality as a Chatbot
 
 
