@@ -94,7 +94,7 @@ Este es el flujo conversacional paso a paso que seguira el bot
 **Bot:**
 "Listo he agregado el comentario a tu ticket, y se pondran en contacto tan pronto como sea posible"
 
-### Fallbacks
+## 5. Fallbacks
 
 **F1** -- Email Invalido 2 veces
 **Bot:** "Parece que hay un problema con el correo. Te dejo este enlace para consultarlo manualmente. https://cementdesign.shop/my/tickets. ¿Te puedo colaborar en algo mas?"
@@ -102,4 +102,83 @@ Este es el flujo conversacional paso a paso que seguira el bot
 **F2** -- Ticket no encontrado
 **Bot:** -- "No puedo encontrar ese ticket. ¿desea crear uno nuevo?"
 
+---
+
+## 6. Arbol conversacional (texto estructurado)
+
+INICIO
+  |__Usuario: "Quiero ver el estado de mi ticket"
+      |__Bot: "Claro, ¿Tienes el numero del ticket?"
+
+          |--(A) Usuario tiene el numero
+          |     |__Validar numero
+          |           |--Si valido → Buscar en Odoo
+          |           |     |--Existe → Mostrar estado → Preguntar si desea agregar un comentario
+          |           |     |__No exite → Ofrecer verfiicar por correo → (Ir a B)
+          |           |__Si no valido → Pedir de nuevo → 2 fallos → Fallback F1
+          |
+          |__(B) Usuario no tiene numero
+               |__Bot: Por favor, indique el correo con el cual fue registrado el ticket
+                    |--Validar correo
+                    |     |-- Si 1 ticket → Mostrar datos → Preguntar si quiere visualizar el estado
+                    |     |-- Si 2-5 ticketsm → Listar y solicitar elegir → (Ir A)
+                    |     |__ Si 0 tickets → Ofrecer crear nuevo → Fin
+                    |
+                    |__Usuario seleccion un ticket → (ejecutar A)
+
+Estado del ticket (desde A o B)
+|__Bot muestra
+    - Estado
+    - Ultima actualziacion
+    - Responsable
+  |__"Deseas agregar un comentario"
+
+    |--(C) Usuario quiere agregar cometnario
+    |    |--Bot solicita mensaje → Lo envia a Odoo → Confirmacion
+    |         |__Bot: "¿Desea hacer algo mas?" → Fin
+    |
+    |__(D) Usuario no quiere → Fin
+
+Fallbacks
+|--F1: Email invalido dos veces
+|     |__Bot: Parece que hay un problema con el correo. Revisa aqui tus tickets de manera manual https://cementdesign.shop/my/tickets → Fin
+|
+|__F2: Ticket no encontrado 
+      |__Bot: Ticket no encontrado ¿Quiere crear uno nuevo? → Fin
+
+## 7. Reglas de validacion (Inputs)
+
+Estas son las reglas que el BOT debe de aplicar antes de actuar
+
+**Email:**
+* Debe contener "@" y dominio valido (RegEx)
+* Si falla repetir pregunta maximo 2 veces
+* En el 3er intento activar Fallback 1
+
+**Numero de ticket:**
+* Debe ser numerico o alfanumerico segun helpdesk de Odoo
+* Si usuario ingresa basura → Pedir de neuvo (Maximo 2 intentos)
+* Si no existe → Fallback F2
+
+## 8. Reglas de comportamiento del BOT
+Son pautas de tonos, formas y limites
+
+**El bot debe:**
+* Ser claro y directo
+* Confirmar siempre antes de hacer cualquier accion en Odoo
+* Preguntar antes de crear un ticket nuevo
+* Avisar cuando requiere un dato obligatorio
+
+**El bot NO debe:**
+* Inventar numeros de ticket
+* Dar estado que no existen
+* Prometer tiempos o compromisos no definidos
+* Mostrar ID's internos del Helpdesk que no se deben de mostrar al cliente
+
+## 9. Fallback Finales (Cuando algo sale mal)
+Fallback F3 -- Email Invalido
+
+Este Fallback se aplciaria a ocasiones en las que el sistema se encuentre desahbilitado, con problemas de conexion o simplemente noe ste funcionando Odoo de alguna manera o inclsuive la API de OpenAI
+
+"En este momento no puedo acceder a nuestro sistema Interno. Puedes intentar neuvamente en unos minutos, o puede contactarse con nosotros por [aqui](https://cementdesign.shop/contactus)"
 
