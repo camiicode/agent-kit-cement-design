@@ -8,12 +8,17 @@ Retorna la respuesta que luego el Frotned mostrara en el widget
 
 ```json
 {
-  "session_id": "abc123",
-  "message": "Crear lead carlos@example.com",
+  "session_id": "sess_abc123",
+  "message": "Quiero saber el estado de mi ticket",
   "metadata": {
-    "page": "/contact",
-    "site": "cementdesign.shop"
-  }
+    "site": "cementdesign.shop",
+    "page": "/helpdesk",
+    "language": "es",
+  },
+  "context": {
+    "last_intent": "check_ticket_status",
+    "memory": {},
+  },
 }
 ```
 
@@ -21,8 +26,11 @@ Retorna la respuesta que luego el Frotned mostrara en el widget
 
 ```json
 {
-  "reply": "Lead  creado con ID 'abc123'",
-  "status": "success"
+  "reply": "Tu ticket 123456 esta actualmente en progreso. Ultima actualziacion: El equipo de soporte, añadio un comentario hace dos horas",
+  "status": "success",
+  "metadata": {
+    "ticket_id": 123456
+  }
 }
 ```
 # POST `/admin/logs` (Opcional)
