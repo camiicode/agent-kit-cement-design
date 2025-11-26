@@ -1,7 +1,9 @@
-from backend.odoo_service import create_lead
+from odoo_service import create_lead
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from agent import process_message_with_agent
+import json
 
 # Modelo para recibir mensajes del Frontend
 class ChatMessage(BaseModel):
@@ -10,6 +12,13 @@ class ChatMessage(BaseModel):
     metadata: dict | None = None
 
 app = FastAPI()
+
+@app.get("/chat/raw_test")
+async def raw_test():
+    return {
+        "status": "ok",
+        "message": "El backend está respondiendo correctamente."
+    }
 
 # Permitir solicitudes desde nuestro widget web
 app.add_middleware(
@@ -30,7 +39,7 @@ async def chat_endpoint(data: ChatMessage):
     print(f"Metadata: {data.metadata}")
     print("===================================")
 
-    # Validaciones minimas (Sanity - Checks)---------------------------------------------------------
+    # Validaciones minimas (Sanity - Checks)
 
     # Validacion de mensaje
     if not data.message or not isinstance(data.message, str):
@@ -67,29 +76,56 @@ async def chat_endpoint(data: ChatMessage):
     print(f"Mensaje validado: {user_message}")
     print(f"Session id final: {session_id}")
     print(f"Metadata final: {clean_metadata}")
-    #-------------------------------------------------------------------------------------------------
     
+    # --------------------------------------------------------
+    #   Llamar al agente inteligente (OpenAI, via agent.py)
+    # --------------------------------------------------------
+
+    try:
+        raw_result = process_message_with_agent(user_message)
+        agent_data = json.loads(raw_result)
+    except Exception as e:
+        print("[ERROR] No se pudo procesar la respuesta del agente", str(e))
+        return {"response": "Error procesando el mensaje. Intenta nuevamente"}
     
-    # Respuesta simulada (aquí iría la lógica del chatbot)
-    bot_reply = ""
+    intencion = agent_data("intencion")
+    datos = agent_data.get("datos", {})
+    respuesta_usuario =agent_data.get("respuesta usuario", "Entendido.")
+
+    # --------------------------------------------------------
+    #   Accion 1 - Crear lead
+    # --------------------------------------------------------
+
+    if intencion == "crear_lead":
+        nombre = datos.get("nombre")
+        email = datos.get("email")
+        mensaje = datos.get("mensaje", user_message)
+
+        if not nombre or not email:
+            return{"response": "Necesito tu nombre y correo para continuar con el registro."}
+        
+        lead_id = create_lead(nombre, email, mensaje)
+        return{"response": f"{respuesta_usuario}\n ✔ Lead creado con ID: {lead_id}"}
     
-    # 1. Detectar si el usuario quiere crear un lead
-    if user_message.lower().startswith("crear lead"):
-        # Formato Esperado
-        # Crear lead: Nombre, Apellido | correo@example.com
-        try:
-            parts = user_message.split("|")
-            client_name = parts[0].replace("Crear lead:", "").strip()
-            client_email = parts[1].strip()
+    # --------------------------------------------------------
+    #   Accion 2 - Consultar Ticket
+    # --------------------------------------------------------
 
-            lead_id = create_lead(client_name, client_email)
-            bot_reply = f"Lead creado con ID: {lead_id}"
-            
-        except Exception as e:
-            bot_reply = f"Error al crear el lead: {str(e)}"
+    if intencion == "consultar_ticket":
+        ticket_id = datos.get("ticket_id")
 
-    else:
-        #  Respuesta por defecto del chatbot
-        bot_reply = f"{user_message}"
+        if not ticket_id:
+            return {"response": "Necesito tu numero de ticket para revisarlo"}
+        
+        ticket_info = get_ticket_by_id(ticket_id)
 
-    return {"response": bot_reply}
+        if not ticket_info:
+            return{"response": f"no encontre informacion del ticket {ticket_id}"}
+        
+        return{"response": f"{respuesta_usuario}\n Estado del ticket {ticket_id}: {ticket_info}"}
+    
+    # --------------------------------------------------------
+    #   Accion 2 - FAQ / Pregunta general
+    # --------------------------------------------------------
+
+    return{"response": respuesta_usuario}
