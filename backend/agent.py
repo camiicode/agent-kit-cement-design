@@ -14,66 +14,79 @@ MODEL = "gpt-4.1-mini"
 
 def process_message_with_agent(message: str):
     """
-    Enviar el mensaje del usuario a OpenAI para que:
-    - Detecte intención (lead, ticket, FAQ)
-    - Extraiga datos relevantes
-    - Devuelva instrucciones en JSON
+    Envía el mensaje del usuario a OpenAI para:
+    - Detectar intención
+    - Extraer datos
+    - Devolver JSON con instrucciones
     """
 
     prompt = f"""
-Eres un agente conversacional para la empresa Cement Design.
-Tu responsabilidad es identificar lo que el usuario necesita y devolver una intención clara.
+    
+        Eres un agente conversacional para la empresa Cement Design.
+        Tu responsabilidad es identificar lo que el usuario necesita y devolver una intención clara.
 
-### Reglas de clasificación:
+        ### Reglas de clasificación:
 
-1) CREAR LEAD (intencion = "crear_lead")
-Solo aplica si el usuario expresa un interés comercial explícito:
-- solicitar cotización
-- pedir precios
-- mostrar interés en un producto/servicio
-- pedir contacto con ventas
-- solicitar información comercial
+        1) CREAR LEAD (intencion = "crear_lead")
+        Solo si el usuario muestra interés comercial:
+        - cotización, precios, contacto de ventas, etc.
 
-No crees leads si el usuario solo hace preguntas generales o no comerciales.
+        2) CONSULTAR TICKET (intencion = "consultar_ticket")
+        Si menciona ticket, soporte o número de caso.
 
-Debe extraer si es posible:
-- nombre
-- email
-- mensaje proporcionado
+        3) FAQ / GENERAL (intencion = "faq")
+        Si no es comercial ni ticket.
 
-2) CONSULTAR TICKET (intencion = "consultar_ticket")
-Aplica cuando el usuario menciona:
-- número de ticket
-- quiere saber el estado del soporte
-- pregunta por un caso en Helpdesk
+        4) CONTEXTO Y MENSAJES DE SEGUIMIENTO
+        Si el usuario previamente expresó intención de cotizar o interés comercial,
+        y ahora envía datos (nombre, correo, teléfono, etc.), NO cambies la intención a "faq".
 
-Extraer:
-- ticket_id si lo menciona
+        Debes asumir que el usuario continúa el flujo de creación de lead.
 
-3) FAQ / GENERAL (intencion = "faq")
-Cualquier otra pregunta general, informativa o de conversación.
+        Ejemplos:
+        - "Me llamo Juan Perez"
+        - "Mi correo es juan@correo.com"
+        - "Mi número es 310 xxx xxxx"
 
-### Formato de salida (IMPORTANTE)
-Siempre devolver JSON válido:
-{{
-  "intencion": "...",
-  "datos": {{
-      "nombre": "...",
-      "email": "...",
-      "mensaje": "...",
-      "ticket_id": "..."
-  }},
-  "respuesta_usuario": "Texto final que enviaremos al usuario."
-}}
+        En todos estos casos:
+        → La intención debe permanecer "crear_lead".
+        → Debes rellenar los campos faltantes.
 
-Mensaje del usuario: "{message}"
-"""
 
-    completion = client.responses.create(
+        ### Formato de salida (JSON válido)
+        {{
+        "intencion": "...",
+        "datos": {{
+            "nombre": "...",
+            "email": "...",
+            "mensaje": "...",
+            "ticket_id": "..."
+        }},
+        "respuesta_usuario": "Texto final para enviar al usuario."
+        }}
+
+        Mensaje: "{message}"
+    """
+
+    completion = client.chat.completions.create(
         model=MODEL,
-        input=prompt,
-        response_format={"type": "json_object"}
+        messages=[
+            {
+                "role": "system",
+                "content": (
+                    "Debes responder SIEMPRE en JSON válido. "
+                    "❗Prohibido usar bloques de código, backticks o etiquetas como ```json. "
+                    "Responde SOLO con JSON puro sin formato adicional."
+                )
+            },
+            {
+                "role": "user",
+                "content": prompt
+            },
+        ],
+
+        temperature=0,
     )
 
-    respuesta = completion.output[0].content[0].text
+    respuesta = completion.choices[0].message.content
     return respuesta

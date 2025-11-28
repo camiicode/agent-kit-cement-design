@@ -5,6 +5,9 @@ from pydantic import BaseModel
 from agent import process_message_with_agent
 import json
 
+# Memoria temporal por sesión
+session_store = {}
+
 # Modelo para recibir mensajes del Frontend
 class ChatMessage(BaseModel):
     session_id: str | None = None
@@ -55,6 +58,15 @@ async def chat_endpoint(data: ChatMessage):
     else:
         session_id = data.session_id
 
+    # Inicializar sesión si no existe
+    if session_id not in session_store:
+        session_store[session_id] = {
+            "nombre": None,
+            "email": None,
+            "telefono": None,
+            "ultimo_mensaje": None
+        }
+
     # Validacion de metadata
     if data.metadata is not None and not isinstance(data.metadata, dict):
         print("[WARN] 'metadata' debe de ser un diccionario. Ignorando metadata.")
@@ -76,36 +88,86 @@ async def chat_endpoint(data: ChatMessage):
     print(f"Mensaje validado: {user_message}")
     print(f"Session id final: {session_id}")
     print(f"Metadata final: {clean_metadata}")
+
+    session_store[session_id]["ultimo_mensaje"] = user_message
     
     # --------------------------------------------------------
     #   Llamar al agente inteligente (OpenAI, via agent.py)
     # --------------------------------------------------------
-
+    
     try:
         raw_result = process_message_with_agent(user_message)
-        agent_data = json.loads(raw_result)
+
+        # Limpieza de seguridad: remover backticks y etiquetas de código
+        clean_json = raw_result.replace("```json", "").replace("```", "").strip()
+
+        print("=== JSON LIMPIO DEL AGENTE ===")
+        print(clean_json)
+        print("================================")
+
+        agent_data = json.loads(clean_json)
     except Exception as e:
-        print("[ERROR] No se pudo procesar la respuesta del agente", str(e))
-        return {"response": "Error procesando el mensaje. Intenta nuevamente"}
+        print("[ERROR] No se pudo procesar la respuesta del agente:", str(e))
+        return {"response": "Error interno procesando tu mensaje."}
     
-    intencion = agent_data("intencion")
+    # Actualizar la memoria con los datos nuevos recibidos
+    if "datos" in agent_data:
+        datos = agent_data["datos"]
+
+        if datos.get("nombre"):
+            session_store[session_id]["nombre"] = datos["nombre"]
+
+        if datos.get("email"):
+            session_store[session_id]["email"] = datos["email"]
+
+        if datos.get("telefono"):
+            session_store[session_id]["telefono"] = datos["telefono"]
+
+
+    # Extraer campos del JSON generado por el agente
+    intencion = agent_data.get("intencion")
     datos = agent_data.get("datos", {})
-    respuesta_usuario =agent_data.get("respuesta usuario", "Entendido.")
+    respuesta_usuario = agent_data.get("respuesta_usuario", "Entendido.")
 
     # --------------------------------------------------------
     #   Accion 1 - Crear lead
     # --------------------------------------------------------
 
     if intencion == "crear_lead":
-        nombre = datos.get("nombre")
-        email = datos.get("email")
-        mensaje = datos.get("mensaje", user_message)
+        nombre = session_store[session_id]["nombre"]
+        email = session_store[session_id]["email"]
+        telefono = session_store[session_id]["telefono"]
 
-        if not nombre or not email:
-            return{"response": "Necesito tu nombre y correo para continuar con el registro."}
+
+        # Validacion Cement Design: Nombre obligatorio
+        if not nombre or nombre.strip() == "":
+            return{"response": "Para continuar, necesito tu nombre completo, como te llamas?"}
         
-        lead_id = create_lead(nombre, email, mensaje)
-        return{"response": f"{respuesta_usuario}\n ✔ Lead creado con ID: {lead_id}"}
+        # Al menos un dato de contacto, ya sea un email o un numero de telefono
+        email = session_store[session_id]["email"]
+        telefono = session_store[session_id]["telefono"]
+
+        email_ok = email and isinstance(email, str) and email.strip() != ""
+        telefono_ok = telefono and str(telefono).strip() != ""
+
+        if not email_ok and not telefono_ok:
+            return {
+                "response": "Para que un asesor pueda contactarte, es necesario al menos un dato de contacto. ¿Podrías darme tu correo o tu número de teléfono?"
+            }
+        
+        lead_id = create_lead(
+            name=nombre,
+            email=email,
+            message=datos.get("mensaje", user_message),
+            phone=telefono
+        )
+
+
+
+        if not lead_id:
+            return {"response": "Hubo un error creando tu registro. Por favor intenta más tarde."}
+
+        return {"response": f"{respuesta_usuario}\n✔ Lead creado con ID: {lead_id}"}
     
     # --------------------------------------------------------
     #   Accion 2 - Consultar Ticket
@@ -117,7 +179,8 @@ async def chat_endpoint(data: ChatMessage):
         if not ticket_id:
             return {"response": "Necesito tu numero de ticket para revisarlo"}
         
-        ticket_info = get_ticket_by_id(ticket_id)
+        from odoo_service import check_ticket_status
+        ticket_info = check_ticket_status(ticket_id)
 
         if not ticket_info:
             return{"response": f"no encontre informacion del ticket {ticket_id}"}

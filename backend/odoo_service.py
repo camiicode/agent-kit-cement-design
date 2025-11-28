@@ -19,11 +19,18 @@ ODOO_PASSWORD = os.getenv("ODOO_PASSWORD") # Contraseña segura del usuario tecn
 def get_uid():
   """Autentica y devuelve el UID del usuario tecnico."""
   try:
-    common = xmlrpc.client.ServerProxy(f"{ODOO_URL}/xmlrpc/2/common")
+    url_common = f"{ODOO_URL.rstrip('/')}/xmlrpc/2/common"
+    common = xmlrpc.client.ServerProxy(url_common, allow_none=True)
+
+    print("[DEBUG] URL Usada para autenticacion", url_common)
+
     uid = common.authenticate(ODOO_DB, ODOO_USERNAME, ODOO_PASSWORD, {})
+    print("[DEBUG] Resultado UID:", uid)
+
     return uid
+  
   except Exception as e:
-    print(f"[ERROR] Error autenticaando en Odoo: {e}")
+    print(f"[ERROR] Error autenticando en Odoo: {e}")
     return None
   
 # =========================================================
@@ -35,12 +42,13 @@ def get_models():
 # =========================================================
 #                   Crear LEAD en el CRM
 # =========================================================
-def create_lead(name, email, phone=None):
+def create_lead(name, email, message=None, phone=None):
   """Crea un lead en Odoo. usado por el agente."""
   uid = get_uid()
   models = get_models()
 
   if not uid:
+    print("[ERROR] UID no obtenido. No se puede crear el lead")
     return None
   
   try:
@@ -51,9 +59,10 @@ def create_lead(name, email, phone=None):
         'name': name,
         'email_from': email,
         'phone': phone or '',
-        "description": f"Lead creado por AgentKIT"
+        "description": message or "Lead creado por agent kit"
       }]
     )
+    print(f"[Ok] Lead creado en Odoo con ID: {lead_id}")
     return lead_id
   
   except Exception as e:
@@ -84,21 +93,3 @@ def check_ticket_status(ticket_id):
   except Exception as e:
     print(f"[ERROR] Error no se pudo consultar ticket: {e}")
     return None
-
-# def get_odoo_models():
-#   common = xmlrpc.client.ServerProxy(f"{ODOO_URL}/xmlrpc/2/common")
-#   uid = common.authenticate(ODOO_DB, ODOO_USERNAME, ODOO_PASSWORD, {} )
-#   models = xmlrpc.client.ServerProxy(f"{ODOO_URL}/xmlrpc/2/object") 
-#   return uid, models
-
-# def create_lead(name, email_from):
-#   uid, models, = get_odoo_models()
-#   lead_id = models.execute_kw(
-#     ODOO_DB, uid, ODOO_PASSWORD,
-#     'crm.lead', 'create',
-#     [{
-#       'name': name,
-#       'email_from': email_from,
-#     }]
-#   )
-#   return lead_id
